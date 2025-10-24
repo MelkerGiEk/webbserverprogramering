@@ -1,0 +1,14 @@
+.flash.success{
+    background-color: lightblue;
+    padding: 10px;
+}
+
+.flash.error{
+    background-color: lightcoral;
+    padding: 10px;
+}
+
+.flash{
+    max-width: fit-content;
+    border-radius: 3px;
+}

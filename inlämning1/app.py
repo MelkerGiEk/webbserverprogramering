@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, session
+from flask import Flask, render_template, request, session, redirect, flash, url_for
 import mysql.connector
 from mysql.connector import Error
 
@@ -22,16 +22,30 @@ def get_db_connection():
         print(f"Fel vid anslutning till MySQL: {e}")
         return None
 
-@app.route('/')
+@app.route('/', methods=['GET', 'POST'])
 def index():
-    return render_template('login.html')
+    if request.method == 'POST':
+        logout = request.form.get('logout')
+        if logout.upper() == 'LOGOUT':
+            session.pop('logged_in', None)
+            session.pop('user_id', None)
+            session.pop('username', None)
+            return redirect(url_for('index'))
+        else:
+            flash('Ogiltigt kommando för utloggning', 'error')
+            return redirect(url_for('index'))
+    if not session.get('logged_in'):
+        return render_template('login.html')
+    return render_template('index.html')
+
+    
 
 @app.route('/login', methods=['POST'])
 def login():
     # hantera POST request från inloggningsformuläret
     if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
+        username = request.form.get('username')
+        password = request.form.get('password')
         connection = get_db_connection()
         if connection is None:
             return "Databasanslutning misslyckades", 500
@@ -48,9 +62,12 @@ def login():
             if user and user['password'] == password:
                 session['user_id'] = user.get('id')
                 session['username'] = user.get('username')
-                return f'Inloggning lyckades! Välkommen {session["username"]}!'
+                session['logged_in'] = True
+                flash('Inloggning lyckades! Välkommen!', 'success')
+                return render_template('index.html') 
             else:
-                return ('Ogiltigt användarnamn eller lösenord', 401)
+                flash ('Ogiltigt användarnamn eller lösenord', 'error')
+                return redirect(url_for('index'))
             # Om lösenordet är korrekt så sätt sessionsvariabler och skicka tillbaka en hälsning med användarens namn.
             # Om lösenordet inte är korrekt skicka tillbaka ett felmeddelande med http-status 401.
 
